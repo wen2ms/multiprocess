@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 
 int main() {
@@ -33,6 +34,8 @@ int main() {
 
     struct sockaddr_in client_address;
     unsigned int client_address_len = sizeof(client_address);
+
+    signal(SIGCHLD, SIG_IGN);
         
     while (1) {
         int client_file_descriptor = accept(file_descriptor, (struct sockaddr*)&client_address, &client_address_len);
