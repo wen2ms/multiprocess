@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 int main() {
@@ -32,37 +33,44 @@ int main() {
 
     struct sockaddr_in client_address;
     unsigned int client_address_len = sizeof(client_address);
-
-    int client_file_descriptor = accept(file_descriptor, (struct sockaddr*)&client_address, &client_address_len);
-
-    if (client_file_descriptor == -1) {
-        perror("accept");
-        return -1;
-    }
-
-    char ip[32];
-    printf("Client IP: %s, Port: %d\n", inet_ntop(AF_INET, &client_address.sin_addr.s_addr, ip, sizeof(ip)),
-           ntohs(client_address.sin_port));
         
     while (1) {
-        char buffer[1024];
-        int receive_data_len = recv(client_file_descriptor, buffer, sizeof(buffer), 0);
+        int client_file_descriptor = accept(file_descriptor, (struct sockaddr*)&client_address, &client_address_len);
 
-        if (receive_data_len > 0) {
-            printf("client say: %s\n", buffer);
-
-            send(client_file_descriptor, buffer, receive_data_len, 0);
-        } else if (receive_data_len == 0) {
-            printf("client disconnected...\n");
-            break;
-        } else {
-            perror("recv");
+        if (client_file_descriptor == -1) {
+            perror("accept");
             return -1;
         }
-    }
 
-    close(file_descriptor);
-    close(client_file_descriptor);
+        char ip[32];
+        printf("Client IP: %s, Port: %d\n", inet_ntop(AF_INET, &client_address.sin_addr.s_addr, ip, sizeof(ip)),
+            ntohs(client_address.sin_port));
+
+        if (fork() > 0) {
+            continue;
+        }
+        
+        while (1) {
+            char buffer[1024];
+            int receive_data_len = recv(client_file_descriptor, buffer, sizeof(buffer), 0);
+
+            if (receive_data_len > 0) {
+                printf("client say: %s\n", buffer);
+
+                send(client_file_descriptor, buffer, receive_data_len, 0);
+            } else if (receive_data_len == 0) {
+                printf("client disconnected...\n");
+
+                close(file_descriptor);
+                close(client_file_descriptor);
+
+                exit(0);
+            } else {
+                perror("recv");
+                return -1;
+            }
+        }
+    }
 
     return 0;
 }
