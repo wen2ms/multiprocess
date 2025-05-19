@@ -50,9 +50,11 @@ int main() {
             ntohs(client_address.sin_port));
 
         if (fork() > 0) {
+            close(client_file_descriptor);
             continue;
-        }
-        
+        } 
+
+        close(file_descriptor);
         while (1) {
             char buffer[1024];
             int receive_data_len = recv(client_file_descriptor, buffer, sizeof(buffer), 0);
@@ -64,7 +66,6 @@ int main() {
             } else if (receive_data_len == 0) {
                 printf("client disconnected...\n");
 
-                close(file_descriptor);
                 close(client_file_descriptor);
 
                 exit(0);
